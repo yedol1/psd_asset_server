@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>File Information</title>
+  </head>
+  <body>
+    <h1>File Information</h1>
+    <ul>
+      <li><strong>Field Name:</strong> {{ file.fieldname }}</li>
+      <li><strong>Original Name:</strong> {{ file.originalname }}</li>
+      <li><strong>Encoding:</strong> {{ file.encoding }}</li>
+      <li><strong>MIME Type:</strong> {{ file.mimetype }}</li>
+      <li><strong>Size:</strong> {{ file.size }} bytes</li>
+      <li><strong>Destination:</strong> {{ file.destination }}</li>
+      <li><strong>Filename:</strong> {{ file.filename }}</li>
+      <li><strong>Path:</strong> {{ file.path }}</li>
+    </ul>
+    <p>
+      <a href="/uploaded-images">View Uploaded Images</a>
+    </p>
+  </body>
+</html>

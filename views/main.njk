@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Asset 파일 업로드</title>
+  </head>
+  <body>
+    <form action="/upload" method="post" enctype="multipart/form-data">
+      <input type="file" name="image" />
+      <select name="folder">
+        <option value="images">Images</option>
+        <option value="icons">Icons</option>
+      </select>
+      <input type="submit" value="Upload" />
+    </form>
+
+    <p>
+      <a href="/uploaded-images">업로드된 사진 확인하기</a>
+    </p>
+  </body>
+  <script>
+    console.log(isAuthenticated);
+  </script>
+</html>

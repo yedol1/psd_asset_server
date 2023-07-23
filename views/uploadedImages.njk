@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Uploaded Files</title>
+  </head>
+  <body>
+    <h2>Images</h2>
+    <ul>
+      {% for file in files %} {% if file.folder == 'images' %}
+      <li>
+        <strong>{{ file.name }}</strong> - <a href="{{ file.url }}" target="_blank">View</a> | <a href="javascript:void(0);" onclick="deleteImage('{{ file.folder }}', '{{ file.name }}')">Delete</a> |
+        <input type="text" id="newName-{{ file.name }}" placeholder="New name" />
+        <button onclick="renameImage('{{ file.folder }}', '{{ file.name }}')">Rename</button>
+      </li>
+      {% endif %} {% endfor %}
+    </ul>
+
+    <h2>Icons</h2>
+    <ul>
+      {% for file in files %} {% if file.folder == 'icons' %}
+      <li>
+        <strong>{{ file.name }}</strong> - <a href="{{ file.url }}" target="_blank">View</a> | <a href="javascript:void(0);" onclick="deleteImage('{{ file.folder }}', '{{ file.name }}')">Delete</a> |
+        <input type="text" id="newName-{{ file.name }}" placeholder="New name" />
+        <button onclick="renameImage('{{ file.folder }}', '{{ file.name }}')">Rename</button>
+      </li>
+      {% endif %} {% endfor %}
+    </ul>
+    <p>
+      <a href="/main">업로드 하기</a>
+    </p>
+
+    <script>
+      function deleteImage(folder, filename) {
+        if (confirm("Are you sure you want to delete this file?")) {
+          fetch(`/delete-image/${folder}/${filename}`, { method: "DELETE" })
+            .then((response) => response.json())
+            .then((data) => {
+              if (data.success) {
+                alert(data.message);
+                location.reload();
+              } else {
+                alert("Error deleting file.");
+              }
+            });
+        }
+      }
+
+      function renameImage(folder, filename) {
+        const newName = document.getElementById(`newName-${filename}`).value;
+        if (!newName) {
+          alert("Please enter a new name.");
+          return;
+        }
+
+        fetch(`/rename-image`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ folder: folder, oldName: filename, newName: newName }),
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.success) {
+              alert(data.message);
+              location.reload();
+            } else {
+              alert("Error renaming file.");
+            }
+          });
+      }
+    </script>
+  </body>
+</html>
