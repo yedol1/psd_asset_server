@@ -113,7 +113,7 @@ app.post("/upload/icons", ensureAdmin, uploadIcon.single("icon"), (req, res) => 
 app.delete("/delete-image/:folder/:filename", ensureAdmin, async (req, res, next) => {
   try {
     const { folder, filename } = req.params;
-    await fs.unlink(path.join(__dirname, "uploads", folder, filename));
+    await fs.promises.unlink(path.join(__dirname, "uploads", folder, filename));
     res.send({ success: true, message: "File deleted." });
   } catch (err) {
     next(err);
@@ -122,14 +122,13 @@ app.delete("/delete-image/:folder/:filename", ensureAdmin, async (req, res, next
 
 app.post("/rename-image", ensureAdmin, async (req, res, next) => {
   try {
-    const { oldName, newName, folder } = req.body;
-    await fs.rename(path.join(__dirname, "uploads", folder, oldName), path.join(__dirname, "uploads", folder, newName));
+    const { folder, oldName, newName } = req.body;
+    await fs.promises.rename(path.join(__dirname, "uploads", folder, oldName), path.join(__dirname, "uploads", folder, newName));
     res.send({ success: true, message: "File renamed." });
   } catch (err) {
     next(err);
   }
 });
-
 app.get("/uploaded-images", ensureAdmin, async (req, res, next) => {
   try {
     let files = await getUploadedFiles();
