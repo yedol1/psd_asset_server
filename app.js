@@ -10,6 +10,7 @@ const session = require("express-session");
 const { ensureAdmin } = require("./middlewares/auth");
 const { getUploadedFiles } = require("./helpers/upload");
 const fs = require("fs");
+const archiver = require("archiver");
 
 const app = express();
 
@@ -82,6 +83,7 @@ app.use(
 app.use("/", require("./routes/index"));
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
+// 관리자 로그인
 app.get("/admin-login", (req, res) => {
   res.render("index");
 });
@@ -100,6 +102,7 @@ app.get("/main", ensureAdmin, (req, res) => {
   res.render("main");
 });
 
+// 이미지 업로드
 app.post("/upload/images", ensureAdmin, uploadImage.single("image"), (req, res) => {
   if (!req.file) return res.status(400).send("No image uploaded.");
   res.render("fileInfo", { file: req.file });
@@ -110,6 +113,7 @@ app.post("/upload/icons", ensureAdmin, uploadIcon.single("icon"), (req, res) => 
   res.render("fileInfo", { file: req.file });
 });
 
+// 이미지 삭제
 app.delete("/delete-image/:folder/:filename", ensureAdmin, async (req, res, next) => {
   try {
     const { folder, filename } = req.params;
@@ -120,15 +124,23 @@ app.delete("/delete-image/:folder/:filename", ensureAdmin, async (req, res, next
   }
 });
 
+// 이미지 이름 변경
 app.post("/rename-image", ensureAdmin, async (req, res, next) => {
   try {
     const { folder, oldName, newName } = req.body;
-    await fs.promises.rename(path.join(__dirname, "uploads", folder, oldName), path.join(__dirname, "uploads", folder, newName));
+
+    const ext = path.extname(oldName); // 확장자명 추출
+    const completeNewName = newName + ext; // 새 이름에 확장자명 추가
+
+    await fs.promises.rename(path.join(__dirname, "uploads", folder, oldName), path.join(__dirname, "uploads", folder, completeNewName));
+
     res.send({ success: true, message: "File renamed." });
   } catch (err) {
     next(err);
   }
 });
+
+// 이미지 목록
 app.get("/uploaded-images", ensureAdmin, async (req, res, next) => {
   try {
     let files = await getUploadedFiles();
@@ -136,6 +148,26 @@ app.get("/uploaded-images", ensureAdmin, async (req, res, next) => {
   } catch (err) {
     next(err);
   }
+});
+
+// 이미지 다운로드
+app.get("/download-uploads", ensureAdmin, (req, res, next) => {
+  const archive = archiver("zip", {
+    zlib: { level: 9 }, // 압축 수준 설정
+  });
+
+  const output = res;
+  output.attachment("uploads.zip"); // 브라우저에서 다운로드할 파일 이름 설정
+
+  archive.pipe(output);
+
+  archive.directory(path.join(__dirname, "uploads"), false);
+
+  archive.finalize();
+
+  archive.on("error", (err) => {
+    next(err);
+  });
 });
 
 app.use((req, res, next) => next(createError(404)));
