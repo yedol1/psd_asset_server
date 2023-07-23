@@ -6,13 +6,15 @@
     <title>Asset 파일 업로드</title>
   </head>
   <body>
-    <form action="/upload" method="post" enctype="multipart/form-data">
+    <h1>이미지 업로드</h1>
+    <form action="/upload/images" method="post" enctype="multipart/form-data">
       <input type="file" name="image" />
-      <select name="folder">
-        <option value="images">Images</option>
-        <option value="icons">Icons</option>
-      </select>
-      <input type="submit" value="Upload" />
+      <input type="submit" value="Upload to Images" />
+    </form>
+    <h1>아이콘 업로드</h1>
+    <form action="/upload/icons" method="post" enctype="multipart/form-data">
+      <input type="file" name="icon" />
+      <input type="submit" value="Upload to Icons" />
     </form>
 
     <p>

@@ -9,7 +9,7 @@ const multer = require("multer");
 const session = require("express-session");
 const { ensureAdmin } = require("./middlewares/auth");
 const { getUploadedFiles } = require("./helpers/upload");
-const fs = require("fs").promises;
+const fs = require("fs");
 
 const app = express();
 
@@ -19,18 +19,50 @@ app.set("view engine", "njk");
 nunjucks.configure("views", { express: app, watch: true });
 
 // Multer 설정
-const storage = multer.diskStorage({
+const imageStorage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const folder = req.body.folder || "images";
-    cb(null, path.join("uploads", folder));
+    const destinationPath = path.join(__dirname, "uploads", "images");
+    if (!fs.existsSync(destinationPath)) {
+      fs.mkdirSync(destinationPath, { recursive: true });
+    }
+    cb(null, destinationPath);
   },
   filename: (req, file, cb) => {
     const originalName = path.basename(file.originalname, path.extname(file.originalname));
     const extension = path.extname(file.originalname);
-    cb(null, `${originalName}-${Date.now()}${extension}`);
+    const fullPath = path.join(__dirname, "uploads", "images", `${originalName}${extension}`);
+
+    if (fs.existsSync(fullPath)) {
+      return cb(new Error("File with the same name already exists!"));
+    }
+
+    cb(null, `${originalName}${extension}`);
   },
 });
-const upload = multer({ storage: storage });
+
+const iconStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const destinationPath = path.join(__dirname, "uploads", "icons");
+    if (!fs.existsSync(destinationPath)) {
+      fs.mkdirSync(destinationPath, { recursive: true });
+    }
+    cb(null, destinationPath);
+  },
+  filename: (req, file, cb) => {
+    const originalName = path.basename(file.originalname, path.extname(file.originalname));
+    const extension = path.extname(file.originalname);
+    const fullPath = path.join(__dirname, "uploads", "icons", `${originalName}${extension}`);
+
+    if (fs.existsSync(fullPath)) {
+      return cb(new Error("File with the same name already exists!"));
+    }
+
+    cb(null, `${originalName}${extension}`);
+  },
+});
+
+const uploadImage = multer({ storage: imageStorage });
+const uploadIcon = multer({ storage: iconStorage });
 
 // 미들웨어 설정
 app.use(logger("dev"));
@@ -50,36 +82,38 @@ app.use(
 app.use("/", require("./routes/index"));
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// 로그인 페이지는 누구나 접근 가능하게 설정
 app.get("/admin-login", (req, res) => {
   res.render("index");
 });
 
-// 로그인 처리
 app.post("/admin-login", (req, res) => {
   const adminPassword = "ketotop0014";
   if (req.body.password === adminPassword) {
     req.session.isAuthenticated = true;
-    res.redirect("/main"); // 로그인 성공 시 /main으로 리디렉션
+    res.redirect("/main");
   } else {
     res.send("Incorrect password.");
   }
 });
 
-// 로그인이 되어 있지 않으면 접근 불가능한 경로들
 app.get("/main", ensureAdmin, (req, res) => {
   res.render("main");
 });
 
-app.post("/upload", ensureAdmin, upload.single("image"), (req, res) => {
-  if (!req.file) return res.status(400).send("No file uploaded.");
+app.post("/upload/images", ensureAdmin, uploadImage.single("image"), (req, res) => {
+  if (!req.file) return res.status(400).send("No image uploaded.");
   res.render("fileInfo", { file: req.file });
 });
 
-app.delete("/delete-image/:filename", ensureAdmin, async (req, res, next) => {
+app.post("/upload/icons", ensureAdmin, uploadIcon.single("icon"), (req, res) => {
+  if (!req.file) return res.status(400).send("No icon uploaded.");
+  res.render("fileInfo", { file: req.file });
+});
+
+app.delete("/delete-image/:folder/:filename", ensureAdmin, async (req, res, next) => {
   try {
-    const filename = req.params.filename;
-    await fs.unlink(path.join(__dirname, "uploads", filename));
+    const { folder, filename } = req.params;
+    await fs.unlink(path.join(__dirname, "uploads", folder, filename));
     res.send({ success: true, message: "File deleted." });
   } catch (err) {
     next(err);
@@ -88,8 +122,8 @@ app.delete("/delete-image/:filename", ensureAdmin, async (req, res, next) => {
 
 app.post("/rename-image", ensureAdmin, async (req, res, next) => {
   try {
-    const { oldName, newName } = req.body;
-    await fs.rename(path.join(__dirname, "uploads", oldName), path.join(__dirname, "uploads", newName));
+    const { oldName, newName, folder } = req.body;
+    await fs.rename(path.join(__dirname, "uploads", folder, oldName), path.join(__dirname, "uploads", folder, newName));
     res.send({ success: true, message: "File renamed." });
   } catch (err) {
     next(err);
@@ -105,7 +139,6 @@ app.get("/uploaded-images", ensureAdmin, async (req, res, next) => {
   }
 });
 
-// 404 및 오류 핸들러
 app.use((req, res, next) => next(createError(404)));
 
 app.use((err, req, res, next) => {
