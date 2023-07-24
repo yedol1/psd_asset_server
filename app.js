@@ -14,6 +14,17 @@ const archiver = require("archiver");
 
 const app = express();
 
+const imageFilter = (req, file, cb) => {
+  // 허용하는 이미지 MIME 타입
+  const allowedMimes = ["image/jpeg", "image/pjpeg", "image/jpg", "image/png", "image/gif", "image/svg+xml", "image/webp", "image/tiff", "image/bmp", "image/x-icon"];
+
+  if (allowedMimes.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new Error("Invalid file type. Only image files are allowed."), false);
+  }
+};
+
 // Nunjucks 설정
 app.set("views", path.join(__dirname, "views"));
 app.set("view engine", "njk");
@@ -62,8 +73,15 @@ const iconStorage = multer.diskStorage({
   },
 });
 
-const uploadImage = multer({ storage: imageStorage });
-const uploadIcon = multer({ storage: iconStorage });
+const uploadImage = multer({
+  storage: imageStorage,
+  fileFilter: imageFilter,
+});
+
+const uploadIcon = multer({
+  storage: iconStorage,
+  fileFilter: imageFilter,
+});
 
 // 미들웨어 설정
 app.use(logger("dev"));
@@ -103,15 +121,31 @@ app.get("/main", ensureAdmin, (req, res) => {
 });
 
 // 이미지 업로드
-app.post("/upload/images", ensureAdmin, uploadImage.array("images", 100), (req, res) => {
-  if (!req.files) return res.status(400).send("No images uploaded.");
-  res.render("fileInfo", { files: req.files });
-});
+app.post(
+  "/upload/images",
+  ensureAdmin,
+  uploadImage.array("images", 100),
+  (req, res) => {
+    if (!req.files) return res.status(400).send("No images uploaded.");
+    res.render("fileInfo", { files: req.files });
+  },
+  (error, req, res, next) => {
+    res.status(400).send(error.message);
+  }
+);
 
-app.post("/upload/icons", ensureAdmin, uploadIcon.array("icons", 100), (req, res) => {
-  if (!req.files) return res.status(400).send("No icons uploaded.");
-  res.render("fileInfo", { files: req.files });
-});
+app.post(
+  "/upload/icons",
+  ensureAdmin,
+  uploadIcon.array("icons", 100),
+  (req, res) => {
+    if (!req.files) return res.status(400).send("No icons uploaded.");
+    res.render("fileInfo", { files: req.files });
+  },
+  (error, req, res, next) => {
+    res.status(400).send(error.message);
+  }
+);
 
 // 이미지 삭제
 app.delete("/delete-image/:folder/:filename", ensureAdmin, async (req, res, next) => {
