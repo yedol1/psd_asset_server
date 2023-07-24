@@ -103,14 +103,14 @@ app.get("/main", ensureAdmin, (req, res) => {
 });
 
 // 이미지 업로드
-app.post("/upload/images", ensureAdmin, uploadImage.single("image"), (req, res) => {
-  if (!req.file) return res.status(400).send("No image uploaded.");
-  res.render("fileInfo", { file: req.file });
+app.post("/upload/images", ensureAdmin, uploadImage.array("images", 100), (req, res) => {
+  if (!req.files) return res.status(400).send("No images uploaded.");
+  res.render("fileInfo", { files: req.files });
 });
 
-app.post("/upload/icons", ensureAdmin, uploadIcon.single("icon"), (req, res) => {
-  if (!req.file) return res.status(400).send("No icon uploaded.");
-  res.render("fileInfo", { file: req.file });
+app.post("/upload/icons", ensureAdmin, uploadIcon.array("icons", 100), (req, res) => {
+  if (!req.files) return res.status(400).send("No icons uploaded.");
+  res.render("fileInfo", { files: req.files });
 });
 
 // 이미지 삭제
