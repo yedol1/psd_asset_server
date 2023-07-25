@@ -11,6 +11,7 @@ const { ensureAdmin } = require("./middlewares/auth");
 const { getUploadedFiles } = require("./helpers/upload");
 const fs = require("fs");
 const archiver = require("archiver");
+const cors = require("cors");
 
 const app = express();
 
@@ -89,7 +90,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "public")));
-
+app.use(cors());
 app.use(
   session({
     secret: process.env.SESSION_SECRET,
